@@ -131,7 +131,6 @@ export default function DailyChecks() {
             <option value="f4">Cheyyar</option>
             <option value="f5">Kancheepuram</option>
           </select>
-          <button className="btn btn-accent btn-sm">Run Now</button>
         </div>
       </div>
 

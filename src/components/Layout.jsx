@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { alerts } from '../data/mock'
 
@@ -40,6 +41,24 @@ const IconGear = () => (
   </svg>
 )
 
+const IconRefresh = ({ spinning }) => (
+  <svg
+    viewBox="0 0 20 20"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.6"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    style={{
+      width: 14, height: 14, flexShrink: 0,
+      animation: spinning ? 'spin 0.9s linear infinite' : 'none',
+    }}
+  >
+    <path d="M3.5 10a6.5 6.5 0 1110.7-5"/>
+    <path d="M14 2v3.5H10.5"/>
+  </svg>
+)
+
 const navItems = [
   { to: '/',        label: 'Overview',       icon: IconHome,     exact: true },
   { to: '/daily',   label: 'Daily Checks',   icon: IconCalendar, badge: null },
@@ -48,8 +67,57 @@ const navItems = [
   { to: '/alerts',  label: 'Alerts',         icon: IconBell,     badge: newAlerts },
 ]
 
+function formatIST(date) {
+  return date.toLocaleString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+  })
+}
+
+async function fetchAllData() {
+  // API calls to fetch updated data from the database.
+  // Replace these URLs with your actual endpoints.
+  const endpoints = [
+    '/api/daily-checks',
+    '/api/monthly-audit',
+    '/api/annual-checks',
+    '/api/alerts',
+  ]
+  await Promise.all(
+    endpoints.map(url =>
+      fetch(url).then(res => {
+        if (!res.ok) throw new Error(`${url} responded with ${res.status}`)
+        return res.json()
+      })
+    )
+  )
+}
+
 export default function Layout() {
   const location = useLocation()
+  const [isRefreshing, setIsRefreshing]   = useState(false)
+  const [refreshStatus, setRefreshStatus] = useState('idle')   // 'idle' | 'success' | 'error'
+  const [lastRefreshed, setLastRefreshed] = useState(null)
+
+  const triggerRefresh = useCallback(async () => {
+    setIsRefreshing(true)
+    setRefreshStatus('idle')
+    try {
+      await fetchAllData()
+      setRefreshStatus('success')
+      setLastRefreshed(new Date())
+    } catch {
+      setRefreshStatus('error')
+    } finally {
+      setIsRefreshing(false)
+    }
+  }, [])
 
   return (
     <div className="app-shell">
@@ -106,6 +174,35 @@ export default function Layout() {
 
         {/* Footer */}
         <div className="sidebar-footer">
+          {/* Refresh button */}
+          <div className="refresh-wrap">
+            <button
+              className={`refresh-btn${isRefreshing ? ' refreshing' : ''}`}
+              onClick={triggerRefresh}
+              disabled={isRefreshing}
+            >
+              <IconRefresh spinning={isRefreshing} />
+              <span>{isRefreshing ? 'Refreshing…' : 'Refresh Data'}</span>
+              {!isRefreshing && refreshStatus === 'success' && (
+                <span className="refresh-dot refresh-dot-ok" title="Last refresh succeeded" />
+              )}
+              {!isRefreshing && refreshStatus === 'error' && (
+                <span className="refresh-dot refresh-dot-err" title="Last refresh failed" />
+              )}
+            </button>
+
+            {!isRefreshing && refreshStatus === 'success' && lastRefreshed && (
+              <div className="refresh-ts">
+                {formatIST(lastRefreshed)} IST
+              </div>
+            )}
+            {!isRefreshing && refreshStatus === 'error' && (
+              <div className="refresh-err-msg">
+                ⚠ Refresh failed — check connection
+              </div>
+            )}
+          </div>
+
           <div className="sidebar-user">
             <div className="user-avatar">D</div>
             <div className="user-info">
@@ -120,6 +217,17 @@ export default function Layout() {
       <main className="main-content">
         <Outlet />
       </main>
+
+      {/* Loading overlay */}
+      {isRefreshing && (
+        <div className="loading-overlay">
+          <div className="loading-card">
+            <div className="loading-spinner" />
+            <div className="loading-title">Fetching latest data</div>
+            <div className="loading-sub">Connecting to database…</div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

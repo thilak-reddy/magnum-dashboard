@@ -165,7 +165,6 @@ export default function MonthlyAudit() {
             <option value="f4">Cheyyar</option>
           </select>
           <button className="btn btn-sm">Export CSV</button>
-          <button className="btn btn-accent btn-sm">Re-run All</button>
         </div>
       </div>
 
