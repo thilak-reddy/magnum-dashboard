@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { moduleNames } from '../data/mock'
 import { useData } from '../context/DataContext'
 
@@ -100,9 +100,14 @@ export default function DailyChecks() {
   const mispunches = data?.mispunches || []
   const longAbsentees = data?.longAbsentees || []
   const employees = data?.employees || []
+  const factories = data?.factories || []
 
-  const [selectedDate, setSelectedDate] = useState('2026-03-26')
-  const [selectedFactory, setSelectedFactory] = useState('f1')
+  const [selectedFactory, setSelectedFactory] = useState('')
+  useEffect(() => {
+    if (factories.length > 0 && !selectedFactory) {
+      setSelectedFactory(factories[0].id)
+    }
+  }, [factories])
   const [activeModule, setActiveModule] = useState('All')
   const [selectedResult, setSelectedResult] = useState(null)
 
@@ -132,13 +137,8 @@ export default function DailyChecks() {
         </div>
         <div className="header-spacer" />
         <div className="filter-row">
-          <input type="date" className="filter-select" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
           <select className="filter-select" value={selectedFactory} onChange={e => setSelectedFactory(e.target.value)}>
-            <option value="f1">TKM V</option>
-            <option value="f2">TKM II</option>
-            <option value="f3">Kandigai</option>
-            <option value="f4">Cheyyar</option>
-            <option value="f5">Kancheepuram</option>
+            {factories.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
           </select>
         </div>
       </div>

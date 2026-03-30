@@ -119,19 +119,19 @@ export function DataProvider({ children, isMock = false }) {
         comments: [] // Missing comment mapping for brevity unless queried
       })).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
-      // Map Check Results (split by daily/monthly for the UI)
+      // Map Check Results (split by daily/monthly/annual for the UI)
       const dailyModules = ['D01', 'D02', 'D03', 'D04']
-      const dailyCheckResults = (resultsData || []).filter(r => dailyModules.includes(r.module_code)).map(r => ({
-        id: r.id, runId: r.run_id, moduleCode: r.module_code, employeeId: r.employee_id, factoryId: r.factory_id,
-        status: r.status, checkName: r.check_name, expected: r.expected_value, actual: r.actual_value,
-        variance: r.variance, message: r.message, severity: r.severity, period: r.period
-      }))
+      const annualModules = ['A24', 'A25', 'A26', 'A27']
 
-      const monthlyCheckResults = (resultsData || []).filter(r => !dailyModules.includes(r.module_code)).map(r => ({
+      const mapResult = r => ({
         id: r.id, runId: r.run_id, moduleCode: r.module_code, employeeId: r.employee_id, factoryId: r.factory_id,
         status: r.status, checkName: r.check_name, expected: r.expected_value, actual: r.actual_value,
         variance: r.variance, message: r.message, severity: r.severity, period: r.period
-      }))
+      })
+
+      const dailyCheckResults = (resultsData || []).filter(r => dailyModules.includes(r.module_code)).map(mapResult)
+      const monthlyCheckResults = (resultsData || []).filter(r => !dailyModules.includes(r.module_code) && !annualModules.includes(r.module_code)).map(mapResult)
+      const annualCheckResults = (resultsData || []).filter(r => annualModules.includes(r.module_code)).map(mapResult)
 
       // Map Payroll Records
       const payrollRecords = (prData || []).map(pr => ({
@@ -175,15 +175,9 @@ export function DataProvider({ children, isMock = false }) {
         zone: emp.zone, doj: emp.date_of_joining, isActive: emp.is_active
       }))
 
-      // Derive trendData from Check Runs (grouping conditionally)
-      // This is simplified. In a real scenario we use actual stats grouped by month.
-      const trendData = mockData.trendData // fallback format
-      // Generate some dummy Mispunches and long absences for UI demonstration if tables missing
+      const trendData = mockData.trendData
       const mispunches = []
       const longAbsentees = []
-
-      // Generate Annual Checks mock mappings for the UI
-      const annualChecks = mockData.annualChecks 
 
       setData({
         factories,
@@ -191,6 +185,7 @@ export function DataProvider({ children, isMock = false }) {
         checkRuns,
         dailyCheckResults,
         monthlyCheckResults,
+        annualCheckResults,
         alerts,
         payrollRecords,
         minimumWages,
@@ -201,7 +196,6 @@ export function DataProvider({ children, isMock = false }) {
         trendData,
         mispunches,
         longAbsentees,
-        annualChecks
       })
 
       return true
@@ -227,6 +221,7 @@ export function DataProvider({ children, isMock = false }) {
         checkRuns: mockData.checkRuns,
         dailyCheckResults: mockData.dailyCheckResults,
         monthlyCheckResults: mockData.monthlyCheckResults,
+        annualCheckResults: [],
         alerts: mockData.alerts,
         payrollRecords: mockData.payrollRecords,
         minimumWages: mockData.minimumWages,
@@ -237,7 +232,6 @@ export function DataProvider({ children, isMock = false }) {
         trendData: mockData.trendData,
         mispunches: mockData.mispunches,
         longAbsentees: mockData.longAbsentees,
-        annualChecks: mockData.annualChecks
       })
       setIsLoading(false)
     } else {

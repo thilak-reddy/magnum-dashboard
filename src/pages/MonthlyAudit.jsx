@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { moduleNames, formatINR } from '../data/mock'
 import { useData } from '../context/DataContext'
 
@@ -122,25 +122,30 @@ export default function MonthlyAudit() {
   const employees = data?.employees || []
   const payrollRecords = data?.payrollRecords || []
   const monthlyCheckResults = data?.monthlyCheckResults || []
+  const factories = data?.factories || []
 
-  const [selectedMonth, setSelectedMonth] = useState('2026-02')
-  const [selectedFactory, setSelectedFactory] = useState('f1')
+  const [selectedFactory, setSelectedFactory] = useState('')
+  useEffect(() => {
+    if (factories.length > 0 && !selectedFactory) {
+      setSelectedFactory(factories[0].id)
+    }
+  }, [factories])
   const [activeModule, setActiveModule] = useState(null)
   const [selectedEmployee, setSelectedEmployee] = useState(null)
   const [sortBy, setSortBy] = useState('employee')
 
-  const factoryRecords = payrollRecords.filter(p => p.factoryId === selectedFactory && p.monthYear === selectedMonth)
+  const factoryRecords = payrollRecords.filter(p => p.factoryId === selectedFactory)
   const workingDays = 22
 
   const enriched = useMemo(() => factoryRecords.map(pr => {
     const emp = employees.find(e => e.id === pr.employeeId)
-    const empChecks = monthlyCheckResults.filter(c => c.employeeId === pr.employeeId && c.monthYear === selectedMonth)
+    const empChecks = monthlyCheckResults.filter(c => c.employeeId === pr.employeeId && c.monthYear === pr.monthYear)
     const issues = empChecks.filter(c => c.status === 'FAIL')
     const warns  = empChecks.filter(c => c.status === 'WARN')
     const calcGross = ((pr.fixedBasic + pr.fixedHra + pr.fixedDa + pr.fixedOa) / workingDays) * pr.presentDays
     const grossVariance = pr.totalEarnings - (pr.earnedBasic + pr.earnedHra + pr.earnedDa + pr.earnedOa + pr.attendanceBonus + pr.incentiveAmount + pr.workerOtAmount + pr.staffOtAmount)
     return { ...pr, emp, issues, warns, calcGross }
-  }), [factoryRecords, selectedMonth])
+  }), [factoryRecords])
 
   const sorted = useMemo(() => [...enriched].sort((a, b) => {
     if (sortBy === 'variance') return b.issues.length - a.issues.length
@@ -150,15 +155,15 @@ export default function MonthlyAudit() {
 
   // Module strip stats
   const moduleStats = useMemo(() => {
-    const all = monthlyCheckResults.filter(c => c.factoryId === selectedFactory && c.monthYear === selectedMonth)
+    const all = monthlyCheckResults.filter(c => c.factoryId === selectedFactory)
     return MONTHLY_MODULES.map(code => {
       const m = all.filter(c => c.moduleCode === code)
       return { code, pass: m.filter(c => c.status === 'PASS').length, fail: m.filter(c => c.status === 'FAIL').length, warn: m.filter(c => c.status === 'WARN').length }
     })
-  }, [selectedFactory, selectedMonth])
+  }, [selectedFactory])
 
-  const totalFails = monthlyCheckResults.filter(c => c.factoryId === selectedFactory && c.monthYear === selectedMonth && c.status === 'FAIL').length
-  const totalPasses = monthlyCheckResults.filter(c => c.factoryId === selectedFactory && c.monthYear === selectedMonth && c.status === 'PASS').length
+  const totalFails = monthlyCheckResults.filter(c => c.factoryId === selectedFactory && c.status === 'FAIL').length
+  const totalPasses = monthlyCheckResults.filter(c => c.factoryId === selectedFactory && c.status === 'PASS').length
 
   return (
     <>
@@ -169,12 +174,8 @@ export default function MonthlyAudit() {
         </div>
         <div className="header-spacer" />
         <div className="filter-row">
-          <input type="month" className="filter-select" value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} />
           <select className="filter-select" value={selectedFactory} onChange={e => setSelectedFactory(e.target.value)}>
-            <option value="f1">TKM V</option>
-            <option value="f2">TKM II</option>
-            <option value="f3">Kandigai</option>
-            <option value="f4">Cheyyar</option>
+            {factories.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
           </select>
           <button className="btn btn-sm">Export CSV</button>
         </div>
@@ -250,6 +251,7 @@ export default function MonthlyAudit() {
               <thead>
                 <tr>
                   <th>Employee</th>
+                  <th>Month</th>
                   <th>Gross (Exp)</th>
                   <th>Gross (Actual)</th>
                   <th>EPF</th>
@@ -269,12 +271,13 @@ export default function MonthlyAudit() {
                     <tr
                       key={r.id}
                       className={hasIssue ? 'row-high' : 'row-pass'}
-                      onClick={() => setSelectedEmployee(r.employeeId)}
+                      onClick={() => setSelectedEmployee({ id: r.employeeId, monthYear: r.monthYear })}
                     >
                       <td>
                         <div className="td-primary">{r.emp?.name}</div>
                         <div className="td-sub">{r.emp?.empNo} · {r.emp?.designation}</div>
                       </td>
+                      <td className="td-sub">{r.monthYear}</td>
                       <td className="td-mono td-expected">{formatINR(Math.round(expGross))}</td>
                       <td className={`td-mono ${Math.abs(grossDiff) > 1 ? 'td-actual-fail' : 'td-actual-pass'}`}>
                         {formatINR(r.totalEarnings)}
@@ -308,9 +311,9 @@ export default function MonthlyAudit() {
 
       {selectedEmployee && (
         <EmployeeDrawer
-          employeeId={selectedEmployee}
+          employeeId={selectedEmployee.id}
           factoryId={selectedFactory}
-          monthYear={selectedMonth}
+          monthYear={selectedEmployee.monthYear}
           onClose={() => setSelectedEmployee(null)}
         />
       )}
