@@ -144,7 +144,29 @@ export const monthlyCheckResults = [
   { id: 'mc29', moduleCode: 'M23', employeeId: 'e03', factoryId: 'f1', monthYear: '2026-02', status: 'PASS', checkName: 'Net pay',          expected: '₹32,192', actual: '₹32,192', variance: 0,     message: 'Net pay reconciles exactly', severity: 'CRITICAL' },
 ]
 
-// ─── ANNUAL CHECK RESULTS ────────────────────────────────────
+// ─── ANNUAL CHECK RESULTS (flat, UI-ready) ───────────────────
+export const annualCheckResults = [
+  // A24 – Labour Welfare Fund
+  { id: 'acr01', moduleCode: 'A24', employeeId: 'e01', factoryId: 'f1', checkName: 'LWF deduction check', expected: '₹20', actual: '₹20', variance: null,  severity: 'LOW',  status: 'PASS', message: null },
+  { id: 'acr02', moduleCode: 'A24', employeeId: 'e02', factoryId: 'f1', checkName: 'LWF deduction check', expected: '₹20', actual: '₹20', variance: null,  severity: 'LOW',  status: 'PASS', message: null },
+  { id: 'acr03', moduleCode: 'A24', employeeId: 'e04', factoryId: 'f1', checkName: 'LWF deduction check', expected: '₹20', actual: '₹0',  variance: 20,    severity: 'HIGH', status: 'FAIL', message: 'LWF not deducted in December. Rajan Subramanian — ₹20 missing.' },
+  { id: 'acr04', moduleCode: 'A24', employeeId: 'e06', factoryId: 'f1', checkName: 'LWF deduction check', expected: '₹20', actual: '₹20', variance: null,  severity: 'LOW',  status: 'PASS', message: null },
+  // A25 – Performance Bonus Audit
+  { id: 'acr05', moduleCode: 'A25', employeeId: 'e01', factoryId: 'f1', checkName: 'Bonus accrual vs payout', expected: '₹5,108', actual: '₹5,108', variance: null, severity: 'LOW',  status: 'PASS', message: null },
+  { id: 'acr06', moduleCode: 'A25', employeeId: 'e04', factoryId: 'f1', checkName: 'Bonus accrual vs payout', expected: '₹5,726', actual: '₹5,600', variance: 126,  severity: 'HIGH', status: 'FAIL', message: 'Rajan Subramanian — bonus short by ₹126. Accrued ₹5,726 vs paid ₹5,600.' },
+  { id: 'acr07', moduleCode: 'A25', employeeId: 'e02', factoryId: 'f1', checkName: 'Bonus accrual vs payout', expected: '₹9,031', actual: '₹9,031', variance: null, severity: 'LOW',  status: 'PASS', message: null },
+  // A26 – Earned Leave Encashment
+  { id: 'acr08', moduleCode: 'A26', employeeId: 'e02', factoryId: 'f1', checkName: 'EL encashment check', expected: '₹6,143',  actual: '₹6,143',  variance: null, severity: 'LOW',    status: 'PASS', message: null },
+  { id: 'acr09', moduleCode: 'A26', employeeId: 'e03', factoryId: 'f1', checkName: 'EL encashment check', expected: '₹10,385', actual: '₹10,385', variance: null, severity: 'LOW',    status: 'PASS', message: null },
+  { id: 'acr10', moduleCode: 'A26', employeeId: 'e05', factoryId: 'f1', checkName: 'EL encashment check', expected: '₹7,173',  actual: '₹7,000',  variance: 173,  severity: 'HIGH',   status: 'FAIL', message: 'Karpakam Velu — encashment short by ₹173. Calculated ₹7,173 vs paid ₹7,000.' },
+  { id: 'acr11', moduleCode: 'A26', employeeId: 'e01', factoryId: 'f1', checkName: 'EL encashment check', expected: '₹0',      actual: '₹0',      variance: null, severity: 'MEDIUM', status: 'WARN', message: 'Worker EL found — not eligible. Kavitha Murugan has 4 EL days but is classified as worker.' },
+  // A27 – EPF / ESI Reconciliation (factory-level checks, no employeeId)
+  { id: 'acr12', moduleCode: 'A27', employeeId: null, factoryId: 'f1', checkName: 'EPF system vs ECR',       expected: '₹1,86,400', actual: '₹1,86,400', variance: 0,   severity: 'LOW',  status: 'PASS', message: null },
+  { id: 'acr13', moduleCode: 'A27', employeeId: null, factoryId: 'f1', checkName: 'ESI system vs challan',   expected: '₹21,840',   actual: '₹21,480',   variance: 360, severity: 'HIGH', status: 'FAIL', message: 'ESI challan short by ₹360. System total ₹21,840 vs challan ₹21,480.' },
+  { id: 'acr14', moduleCode: 'A27', employeeId: null, factoryId: 'f1', checkName: 'Bank bulk vs net pay sum', expected: '₹21,84,320', actual: '₹21,83,960', variance: 360, severity: 'HIGH', status: 'FAIL', message: 'Bank transfer short by ₹360. Bulk payment ₹21,84,320 vs net pay sum ₹21,83,960.' },
+]
+
+// ─── ANNUAL CHECK RESULTS (raw, module-keyed) ────────────────
 export const annualChecks = {
   a24: [
     { employeeId: 'e01', name: 'Kavitha Murugan',      factoryId: 'f1', lwfDeducted: 20, expected: 20, status: 'PASS' },

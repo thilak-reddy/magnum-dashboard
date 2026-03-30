@@ -208,7 +208,7 @@ export function DataProvider({ children, isMock = false }) {
         checkRuns: mockData.checkRuns,
         dailyCheckResults: mockData.dailyCheckResults,
         monthlyCheckResults: mockData.monthlyCheckResults,
-        annualCheckResults: [],
+        annualCheckResults: mockData.annualCheckResults,
         alerts: mockData.alerts,
         payrollRecords: mockData.payrollRecords,
         minimumWages: mockData.minimumWages,
