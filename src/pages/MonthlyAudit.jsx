@@ -129,9 +129,10 @@ export default function MonthlyAudit() {
   const [selectedEmployee, setSelectedEmployee] = useState(null)
   const [sortBy, setSortBy] = useState('employee')
 
-  const factoryRecords = selectedFactory === ''
+  const factoryRecords = (selectedFactory === ''
     ? payrollRecords
     : payrollRecords.filter(p => p.factoryId === selectedFactory)
+  ).filter(p => p.monthYear === '2026-03')
   const workingDays = 26
 
   const enriched = useMemo(() => factoryRecords.map(pr => {
@@ -163,7 +164,11 @@ export default function MonthlyAudit() {
   const totalFails = relevantChecks.filter(c => c.status === 'FAIL').length
   const totalPasses = relevantChecks.filter(c => c.status === 'PASS').length
 
-  const pagination = usePagination(sorted, [selectedFactory, sortBy])
+  const filtered = activeModule
+    ? sorted.filter(r => monthlyCheckResults.some(c => c.employeeId === r.employeeId && c.monthYear === r.monthYear && c.moduleCode === activeModule))
+    : sorted
+
+  const pagination = usePagination(filtered, [selectedFactory, sortBy, activeModule])
 
   return (
     <>
@@ -263,7 +268,7 @@ export default function MonthlyAudit() {
                 </tr>
               </thead>
               <tbody>
-                {sorted.length === 0 ? (
+                {filtered.length === 0 ? (
                   <tr><td colSpan={10} style={{ textAlign:'center', padding:32, color:'var(--text-tertiary)' }}>No results for this factory</td></tr>
                 ) : pagination.page.map(r => {
                   const expGross = ((r.fixedBasic + r.fixedHra + r.fixedDa + r.fixedOa) / workingDays) * r.presentDays

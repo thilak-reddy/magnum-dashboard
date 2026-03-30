@@ -113,7 +113,7 @@ export function DataProvider({ children, isMock = false }) {
       const mapResult = r => ({
         id: r.id, runId: r.run_id, moduleCode: r.module_code, employeeId: r.employee_id, factoryId: r.factory_id,
         status: r.status, checkName: r.check_name, expected: r.expected_value, actual: r.actual_value,
-        variance: r.variance, message: r.message, severity: r.severity, period: r.period
+        variance: r.variance, message: r.message, severity: r.severity, period: r.period, monthYear: r.period
       })
 
       const dailyCheckResults = (resultsData || []).filter(r => dailyModules.includes(r.module_code)).map(mapResult)
