@@ -12,6 +12,20 @@ export function useData() {
   return context
 }
 
+// Fetches all rows from a Supabase query by paginating through 1000-row pages
+async function fetchAll(queryBuilder, pageSize = 1000) {
+  let allData = []
+  let from = 0
+  while (true) {
+    const { data, error } = await queryBuilder.range(from, from + pageSize - 1)
+    if (error) throw error
+    allData = allData.concat(data || [])
+    if (!data || data.length < pageSize) break
+    from += pageSize
+  }
+  return allData
+}
+
 export function DataProvider({ children, isMock = false }) {
   const [data, setData] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -22,53 +36,23 @@ export function DataProvider({ children, isMock = false }) {
       setIsLoading(true)
       setError(null)
 
-      const queries = [
-        { key: 'factories', query: supabase.from('factories').select('*') },
-        { key: 'employees', query: supabase.from('employees').select('*') },
-        { key: 'checkRuns', query: supabase.from('check_runs').select('*') },
-        { key: 'checkResults', query: supabase.from('check_results').select('*, factories(name)') },
-        { key: 'alerts', query: supabase.from('alerts').select('*, factories(name), check_results(module_code)') },
-        { key: 'payrollRecords', query: supabase.from('payroll_records').select('*') },
-        { key: 'minimumWages', query: supabase.from('minimum_wages').select('*') },
-        { key: 'holidayCalendar', query: supabase.from('holiday_calendar').select('*') },
-        { key: 'attendanceBonusConfig', query: supabase.from('attendance_bonus_config').select('*, factories(name)') },
-        { key: 'incentiveSlabs', query: supabase.from('incentive_slabs').select('*') },
-        { key: 'configAuditLog', query: supabase.from('config_audit_log').select('*') },
-        { key: 'lwfTests', query: supabase.from('lwf_tests').select('*').maybeSingle(), optional: true },
-        { key: 'performanceBonusAccrual', query: supabase.from('performance_bonus_accrual').select('*') },
-        { key: 'elBalance', query: supabase.from('el_balance').select('*') },
-      ]
-
-      const results = await Promise.all(queries.map(({ query }) => query))
-      const queryMap = Object.fromEntries(
-        queries.map(({ key }, index) => [key, results[index]])
-      )
-
-      const failedQueries = queries
-        .map(({ key, optional }) => ({ key, optional, error: queryMap[key].error }))
-        .filter(({ error, optional }) => error && !optional)
-
-      if (failedQueries.length) {
-        const details = failedQueries
-          .map(({ key, error: queryError }) => `${key}: ${queryError.message}`)
-          .join(' | ')
-
-        throw new Error(`Supabase query failed. ${details}`)
-      }
-
-      const fData = queryMap.factories.data
-      const empData = queryMap.employees.data
-      const crData = queryMap.checkRuns.data
-      const resultsData = queryMap.checkResults.data
-      const alertsData = queryMap.alerts.data
-      const prData = queryMap.payrollRecords.data
-      const mwData = queryMap.minimumWages.data
-      const hcData = queryMap.holidayCalendar.data
-      const abcData = queryMap.attendanceBonusConfig.data
-      const isData = queryMap.incentiveSlabs.data
-      const calData = queryMap.configAuditLog.data
-      const pbData = queryMap.performanceBonusAccrual.data
-      const elData = queryMap.elBalance.data
+      // Small tables: single fetch. Large tables (check_results, payroll_records, employees): paginated.
+      const [
+        fData, empData, crData, resultsData, alertsData, prData,
+        mwData, hcData, abcData, isData, calData
+      ] = await Promise.all([
+        fetchAll(supabase.from('factories').select('*')),
+        fetchAll(supabase.from('employees').select('*')),
+        fetchAll(supabase.from('check_runs').select('*')),
+        fetchAll(supabase.from('check_results').select('*, factories(name)')),
+        fetchAll(supabase.from('alerts').select('*, factories(name), check_results(module_code)')),
+        fetchAll(supabase.from('payroll_records').select('*')),
+        fetchAll(supabase.from('minimum_wages').select('*')),
+        fetchAll(supabase.from('holiday_calendar').select('*')),
+        fetchAll(supabase.from('attendance_bonus_config').select('*, factories(name)')),
+        fetchAll(supabase.from('incentive_slabs').select('*')),
+        fetchAll(supabase.from('config_audit_log').select('*')),
+      ])
 
       // Map Factories
       const factories = (fData || []).map(f => {
@@ -119,6 +103,9 @@ export function DataProvider({ children, isMock = false }) {
         comments: [] // Missing comment mapping for brevity unless queried
       })).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
+      // Build a lookup: employee_id → factory_id (payroll_records has no factory_id column)
+      const empFactoryMap = Object.fromEntries((empData || []).map(e => [e.id, e.factory_id]))
+
       // Map Check Results (split by daily/monthly/annual for the UI)
       const dailyModules = ['D01', 'D02', 'D03', 'D04']
       const annualModules = ['A24', 'A25', 'A26', 'A27']
@@ -133,9 +120,9 @@ export function DataProvider({ children, isMock = false }) {
       const monthlyCheckResults = (resultsData || []).filter(r => !dailyModules.includes(r.module_code) && !annualModules.includes(r.module_code)).map(mapResult)
       const annualCheckResults = (resultsData || []).filter(r => annualModules.includes(r.module_code)).map(mapResult)
 
-      // Map Payroll Records
+      // Map Payroll Records — derive factoryId from employees since payroll_records has no factory_id column
       const payrollRecords = (prData || []).map(pr => ({
-        id: pr.id, employeeId: pr.employee_id, factoryId: pr.factory_id, monthYear: pr.month_year,
+        id: pr.id, employeeId: pr.employee_id, factoryId: empFactoryMap[pr.employee_id], monthYear: pr.month_year,
         fixedBasic: pr.fixed_basic, fixedHra: pr.fixed_hra, fixedDa: pr.fixed_da, fixedOa: pr.fixed_oa,
         presentDays: pr.achieved_days || 0, lopDays: pr.lop_days, layoffDays: pr.layoff_days, otHours: pr.ot_hours,
         earnedBasic: pr.earned_basic, earnedHra: pr.earned_hra, earnedDa: pr.earned_da, earnedOa: pr.earned_oa,

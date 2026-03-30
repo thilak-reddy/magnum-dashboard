@@ -1,6 +1,7 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { moduleNames } from '../data/mock'
 import { useData } from '../context/DataContext'
+import { usePagination, Pagination } from '../components/Pagination'
 
 
 const modules = ['All', 'D01', 'D02', 'D03', 'D04']
@@ -103,15 +104,12 @@ export default function DailyChecks() {
   const factories = data?.factories || []
 
   const [selectedFactory, setSelectedFactory] = useState('')
-  useEffect(() => {
-    if (factories.length > 0 && !selectedFactory) {
-      setSelectedFactory(factories[0].id)
-    }
-  }, [factories])
   const [activeModule, setActiveModule] = useState('All')
   const [selectedResult, setSelectedResult] = useState(null)
 
-  const allResults = dailyCheckResults.filter(r => r.factoryId === selectedFactory)
+  const allResults = selectedFactory === ''
+    ? dailyCheckResults
+    : dailyCheckResults.filter(r => r.factoryId === selectedFactory)
 
   const byModule = useMemo(() => {
     const m = {}
@@ -125,8 +123,10 @@ export default function DailyChecks() {
     ? allResults
     : allResults.filter(r => r.moduleCode === activeModule)
 
-  const thisMispunches = mispunches.filter(m => m.factoryId === selectedFactory)
-  const thisAbsentees = longAbsentees.filter(a => a.factoryId === selectedFactory)
+  const pagination = usePagination(filtered, [selectedFactory, activeModule])
+
+  const thisMispunches = selectedFactory === '' ? mispunches : mispunches.filter(m => m.factoryId === selectedFactory)
+  const thisAbsentees = selectedFactory === '' ? longAbsentees : longAbsentees.filter(a => a.factoryId === selectedFactory)
 
   return (
     <>
@@ -138,6 +138,7 @@ export default function DailyChecks() {
         <div className="header-spacer" />
         <div className="filter-row">
           <select className="filter-select" value={selectedFactory} onChange={e => setSelectedFactory(e.target.value)}>
+            <option value="">All Factories</option>
             {factories.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
           </select>
         </div>
@@ -224,7 +225,7 @@ export default function DailyChecks() {
               <tbody>
                 {filtered.length === 0 ? (
                   <tr><td colSpan={7} style={{ textAlign:'center', padding:32, color:'var(--text-tertiary)' }}>No results for this filter</td></tr>
-                ) : filtered.map(r => {
+                ) : pagination.page.map(r => {
                   const emp = employees.find(e => e.id === r.employeeId)
                   return (
                     <tr
@@ -256,6 +257,7 @@ export default function DailyChecks() {
               </tbody>
             </table>
           </div>
+          <Pagination pagination={pagination} />
         </div>
 
         {/* Summary row */}

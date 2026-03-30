@@ -1,6 +1,7 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { moduleNames, formatINR } from '../data/mock'
 import { useData } from '../context/DataContext'
+import { usePagination, Pagination } from '../components/Pagination'
 
 
 const MONTHLY_MODULES = ['M05','M06','M07','M08','M09','M10','M11','M12','M13','M14','M15','M16','M17','M18','M19','M20','M21','M22','M23']
@@ -125,16 +126,13 @@ export default function MonthlyAudit() {
   const factories = data?.factories || []
 
   const [selectedFactory, setSelectedFactory] = useState('')
-  useEffect(() => {
-    if (factories.length > 0 && !selectedFactory) {
-      setSelectedFactory(factories[0].id)
-    }
-  }, [factories])
   const [activeModule, setActiveModule] = useState(null)
   const [selectedEmployee, setSelectedEmployee] = useState(null)
   const [sortBy, setSortBy] = useState('employee')
 
-  const factoryRecords = payrollRecords.filter(p => p.factoryId === selectedFactory)
+  const factoryRecords = selectedFactory === ''
+    ? payrollRecords
+    : payrollRecords.filter(p => p.factoryId === selectedFactory)
   const workingDays = 22
 
   const enriched = useMemo(() => factoryRecords.map(pr => {
@@ -155,15 +153,18 @@ export default function MonthlyAudit() {
 
   // Module strip stats
   const moduleStats = useMemo(() => {
-    const all = monthlyCheckResults.filter(c => c.factoryId === selectedFactory)
+    const all = selectedFactory === '' ? monthlyCheckResults : monthlyCheckResults.filter(c => c.factoryId === selectedFactory)
     return MONTHLY_MODULES.map(code => {
       const m = all.filter(c => c.moduleCode === code)
       return { code, pass: m.filter(c => c.status === 'PASS').length, fail: m.filter(c => c.status === 'FAIL').length, warn: m.filter(c => c.status === 'WARN').length }
     })
-  }, [selectedFactory])
+  }, [selectedFactory, monthlyCheckResults])
 
-  const totalFails = monthlyCheckResults.filter(c => c.factoryId === selectedFactory && c.status === 'FAIL').length
-  const totalPasses = monthlyCheckResults.filter(c => c.factoryId === selectedFactory && c.status === 'PASS').length
+  const relevantChecks = selectedFactory === '' ? monthlyCheckResults : monthlyCheckResults.filter(c => c.factoryId === selectedFactory)
+  const totalFails = relevantChecks.filter(c => c.status === 'FAIL').length
+  const totalPasses = relevantChecks.filter(c => c.status === 'PASS').length
+
+  const pagination = usePagination(sorted, [selectedFactory, sortBy])
 
   return (
     <>
@@ -175,6 +176,7 @@ export default function MonthlyAudit() {
         <div className="header-spacer" />
         <div className="filter-row">
           <select className="filter-select" value={selectedFactory} onChange={e => setSelectedFactory(e.target.value)}>
+            <option value="">All Factories</option>
             {factories.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
           </select>
           <button className="btn btn-sm">Export CSV</button>
@@ -263,7 +265,9 @@ export default function MonthlyAudit() {
                 </tr>
               </thead>
               <tbody>
-                {sorted.map(r => {
+                {sorted.length === 0 ? (
+                  <tr><td colSpan={10} style={{ textAlign:'center', padding:32, color:'var(--text-tertiary)' }}>No results for this factory</td></tr>
+                ) : pagination.page.map(r => {
                   const expGross = ((r.fixedBasic + r.fixedHra + r.fixedDa + r.fixedOa) / workingDays) * r.presentDays
                   const grossDiff = r.totalEarnings - expGross
                   const hasIssue = r.issues.length > 0
@@ -305,6 +309,7 @@ export default function MonthlyAudit() {
               </tbody>
             </table>
           </div>
+          <Pagination pagination={pagination} />
         </div>
 
       </div>

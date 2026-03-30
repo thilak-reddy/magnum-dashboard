@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useData } from '../context/DataContext'
+import { usePagination, Pagination } from '../components/Pagination'
 
 const ANNUAL_MODULES = ['A24', 'A25', 'A26', 'A27']
 const MODULE_META = {
@@ -31,6 +32,75 @@ function SectionHeader({ code, name, sub, results }) {
   )
 }
 
+function ModuleTable({ results, employees, selectedResult, setSelectedResult }) {
+  const pagination = usePagination(results, [results.length])
+  return (
+    <div className="card">
+      <div className="data-table-wrap">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Check</th>
+              <th>Expected</th>
+              <th>Actual</th>
+              <th>Variance</th>
+              <th>Severity</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {results.length === 0 ? (
+              <tr>
+                <td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--text-tertiary)' }}>
+                  No results found
+                </td>
+              </tr>
+            ) : pagination.page.map(r => {
+              const emp = employees.find(e => e.id === r.employeeId)
+              return (
+                <tr
+                  key={r.id}
+                  className={r.status === 'FAIL' || r.status === 'WARN' ? (rowClass[r.severity] || 'row-warn') : 'row-pass'}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => setSelectedResult(selectedResult?.id === r.id ? null : r)}
+                >
+                  <td>
+                    {emp ? (
+                      <>
+                        <div className="td-primary">{emp.name}</div>
+                        <div className="td-sub">{emp.empNo} · {emp.category}</div>
+                      </>
+                    ) : <span className="td-sub">Factory-level check</span>}
+                  </td>
+                  <td style={{ maxWidth: 200 }}>
+                    <div className="td-primary" style={{ fontSize: 12.5 }}>{r.checkName}</div>
+                  </td>
+                  <td className="td-expected">{r.expected}</td>
+                  <td className={r.status === 'FAIL' ? 'td-actual-fail' : r.status === 'WARN' ? 'td-actual-warn' : 'td-actual-pass'}>
+                    {r.actual}
+                  </td>
+                  <td className="td-mono">
+                    {r.variance != null ? (r.variance > 0 ? `+${r.variance}` : r.variance) : '—'}
+                  </td>
+                  <td><span className={`badge badge-${severityBadge[r.severity]}`}>{r.severity}</span></td>
+                  <td><span className={`badge badge-${statusColor[r.status]}`}>{r.status}</span></td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+      <Pagination pagination={pagination} />
+      {selectedResult && results.some(r => r.id === selectedResult.id) && (
+        <div style={{ padding: '14px 16px', borderTop: '1px solid var(--border-light)', background: '#FAFAF8', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+          <strong style={{ color: 'var(--text-primary)' }}>Message:</strong> {selectedResult.message}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function AnnualChecks() {
   const { data } = useData()
   const annualCheckResults = data?.annualCheckResults || []
@@ -40,13 +110,9 @@ export default function AnnualChecks() {
   const [selectedFactory, setSelectedFactory] = useState('')
   const [selectedResult, setSelectedResult] = useState(null)
 
-  useEffect(() => {
-    if (factories.length > 0 && !selectedFactory) {
-      setSelectedFactory(factories[0].id)
-    }
-  }, [factories])
-
-  const filtered = annualCheckResults.filter(r => r.factoryId === selectedFactory)
+  const filtered = selectedFactory === ''
+    ? annualCheckResults
+    : annualCheckResults.filter(r => r.factoryId === selectedFactory)
 
   const byModule = module => filtered.filter(r => r.moduleCode === module)
 
@@ -60,6 +126,7 @@ export default function AnnualChecks() {
         <div className="header-spacer" />
         <div className="filter-row">
           <select className="filter-select" value={selectedFactory} onChange={e => setSelectedFactory(e.target.value)}>
+            <option value="">All Factories</option>
             {factories.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
           </select>
         </div>
@@ -76,68 +143,12 @@ export default function AnnualChecks() {
                 sub={MODULE_META[code].sub}
                 results={results}
               />
-              <div className="card">
-                <div className="data-table-wrap">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>Employee</th>
-                        <th>Check</th>
-                        <th>Expected</th>
-                        <th>Actual</th>
-                        <th>Variance</th>
-                        <th>Severity</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {results.length === 0 ? (
-                        <tr>
-                          <td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--text-tertiary)' }}>
-                            No results for this factory
-                          </td>
-                        </tr>
-                      ) : results.map(r => {
-                        const emp = employees.find(e => e.id === r.employeeId)
-                        return (
-                          <tr
-                            key={r.id}
-                            className={r.status === 'FAIL' || r.status === 'WARN' ? (rowClass[r.severity] || 'row-warn') : 'row-pass'}
-                            style={{ cursor: 'pointer' }}
-                            onClick={() => setSelectedResult(selectedResult?.id === r.id ? null : r)}
-                          >
-                            <td>
-                              {emp ? (
-                                <>
-                                  <div className="td-primary">{emp.name}</div>
-                                  <div className="td-sub">{emp.empNo} · {emp.category}</div>
-                                </>
-                              ) : <span className="td-sub">Factory-level check</span>}
-                            </td>
-                            <td style={{ maxWidth: 200 }}>
-                              <div className="td-primary" style={{ fontSize: 12.5 }}>{r.checkName}</div>
-                            </td>
-                            <td className="td-expected">{r.expected}</td>
-                            <td className={r.status === 'FAIL' ? 'td-actual-fail' : r.status === 'WARN' ? 'td-actual-warn' : 'td-actual-pass'}>
-                              {r.actual}
-                            </td>
-                            <td className="td-mono">
-                              {r.variance != null ? (r.variance > 0 ? `+${r.variance}` : r.variance) : '—'}
-                            </td>
-                            <td><span className={`badge badge-${severityBadge[r.severity]}`}>{r.severity}</span></td>
-                            <td><span className={`badge badge-${statusColor[r.status]}`}>{r.status}</span></td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-                {selectedResult?.moduleCode === code && (
-                  <div style={{ padding: '14px 16px', borderTop: '1px solid var(--border-light)', background: '#FAFAF8', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                    <strong style={{ color: 'var(--text-primary)' }}>Message:</strong> {selectedResult.message}
-                  </div>
-                )}
-              </div>
+              <ModuleTable
+                results={results}
+                employees={employees}
+                selectedResult={selectedResult}
+                setSelectedResult={setSelectedResult}
+              />
             </div>
           )
         })}
