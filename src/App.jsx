@@ -18,8 +18,18 @@ export default function App() {
           <Route path="annual" element={<AnnualChecks />} />
           <Route path="alerts" element={<AlertsPage />} />
           <Route path="config" element={<Configuration />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
+
+        <Route path="/mock" element={<Layout basePath="/mock" />}>
+          <Route index element={<Overview />} />
+          <Route path="daily" element={<DailyChecks />} />
+          <Route path="monthly" element={<MonthlyAudit />} />
+          <Route path="annual" element={<AnnualChecks />} />
+          <Route path="alerts" element={<AlertsPage />} />
+          <Route path="config" element={<Configuration />} />
+        </Route>
+
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   )

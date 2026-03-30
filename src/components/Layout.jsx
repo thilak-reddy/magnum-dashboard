@@ -59,13 +59,16 @@ const IconRefresh = ({ spinning }) => (
   </svg>
 )
 
-const navItems = [
-  { to: '/',        label: 'Overview',       icon: IconHome,     exact: true },
-  { to: '/daily',   label: 'Daily Checks',   icon: IconCalendar, badge: null },
-  { to: '/monthly', label: 'Monthly Audit',  icon: IconChart,    badge: null },
-  { to: '/annual',  label: 'Annual Checks',  icon: IconRotate,   badge: null },
-  { to: '/alerts',  label: 'Alerts',         icon: IconBell,     badge: newAlerts },
-]
+function buildNavItems(base, newAlerts) {
+  const b = base.replace(/\/$/, '')
+  return [
+    { to: b + '/',        label: 'Overview',       icon: IconHome,     exact: true },
+    { to: b + '/daily',   label: 'Daily Checks',   icon: IconCalendar, badge: null },
+    { to: b + '/monthly', label: 'Monthly Audit',  icon: IconChart,    badge: null },
+    { to: b + '/annual',  label: 'Annual Checks',  icon: IconRotate,   badge: null },
+    { to: b + '/alerts',  label: 'Alerts',         icon: IconBell,     badge: newAlerts },
+  ]
+}
 
 function formatIST(date) {
   return date.toLocaleString('en-IN', {
@@ -99,7 +102,9 @@ async function fetchAllData() {
   )
 }
 
-export default function Layout() {
+export default function Layout({ basePath = '' }) {
+  const navItems = buildNavItems(basePath, newAlerts)
+  const configTo = basePath.replace(/\/$/, '') + '/config'
   const location = useLocation()
   const [isRefreshing, setIsRefreshing]   = useState(false)
   const [refreshStatus, setRefreshStatus] = useState('idle')   // 'idle' | 'success' | 'error'
@@ -164,7 +169,7 @@ export default function Layout() {
           <div className="nav-divider" />
 
           <NavLink
-            to="/config"
+            to={configTo}
             className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
           >
             <IconGear />
