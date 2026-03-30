@@ -1,10 +1,17 @@
 import { useState, useMemo } from 'react'
-import { payrollRecords, monthlyCheckResults, employees, factories, moduleNames, formatINR } from '../data/mock'
+import { moduleNames, formatINR } from '../data/mock'
+import { useData } from '../context/DataContext'
+
 
 const MONTHLY_MODULES = ['M05','M06','M07','M08','M09','M10','M11','M12','M13','M14','M15','M16','M17','M18','M19','M20','M21','M22','M23']
 const statusColor = { PASS:'pass', FAIL:'fail', WARN:'warn', SKIP:'skip' }
 
 function EmployeeDrawer({ employeeId, factoryId, monthYear, onClose }) {
+  const { data } = useData()
+  const employees = data?.employees || []
+  const payrollRecords = data?.payrollRecords || []
+  const monthlyCheckResults = data?.monthlyCheckResults || []
+
   const emp = employees.find(e => e.id === employeeId)
   const pr = payrollRecords.find(p => p.employeeId === employeeId && p.monthYear === monthYear)
   const checks = monthlyCheckResults.filter(c => c.employeeId === employeeId && c.monthYear === monthYear)
@@ -111,6 +118,11 @@ function EmployeeDrawer({ employeeId, factoryId, monthYear, onClose }) {
 }
 
 export default function MonthlyAudit() {
+  const { data } = useData()
+  const employees = data?.employees || []
+  const payrollRecords = data?.payrollRecords || []
+  const monthlyCheckResults = data?.monthlyCheckResults || []
+
   const [selectedMonth, setSelectedMonth] = useState('2026-02')
   const [selectedFactory, setSelectedFactory] = useState('f1')
   const [activeModule, setActiveModule] = useState(null)

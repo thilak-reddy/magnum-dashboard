@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
-import { factories, alerts, checkRuns, trendData, fmtDateTime, moduleNames, formatINR } from '../data/mock'
+import { fmtDateTime, moduleNames, formatINR } from '../data/mock'
+import { useData } from '../context/DataContext'
 
 function ScoreRing({ score }) {
   const r = 17
@@ -44,6 +45,13 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 export default function Overview() {
   const navigate = useNavigate()
+  const { data } = useData()
+
+  const factories = data?.factories || []
+  const alerts = data?.alerts || []
+  const checkRuns = data?.checkRuns || []
+  const trendData = data?.trendData || []
+
   const [ackd, setAckd] = useState(new Set())
   const newAlerts = alerts.filter(a => a.status === 'NEW' && !ackd.has(a.id)).slice(0, 6)
   const totalIssues = alerts.filter(a => a.status === 'NEW').length

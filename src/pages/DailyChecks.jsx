@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react'
-import { dailyCheckResults, mispunches, longAbsentees, employees, factories, moduleNames } from '../data/mock'
+import { moduleNames } from '../data/mock'
+import { useData } from '../context/DataContext'
+
 
 const modules = ['All', 'D01', 'D02', 'D03', 'D04']
 
@@ -31,9 +33,10 @@ function ModuleCard({ code, results, active, onClick }) {
 }
 
 function DetailDrawer({ result, onClose }) {
+  const { data } = useData()
   if (!result) return null
-  const emp = employees.find(e => e.id === result.employeeId)
-  const factory = factories.find(f => f.id === result.factoryId)
+  const emp = (data?.employees || []).find(e => e.id === result.employeeId)
+  const factory = (data?.factories || []).find(f => f.id === result.factoryId)
   return (
     <>
       <div className="drawer-overlay" onClick={onClose} />
@@ -92,6 +95,12 @@ function DetailDrawer({ result, onClose }) {
 }
 
 export default function DailyChecks() {
+  const { data } = useData()
+  const dailyCheckResults = data?.dailyCheckResults || []
+  const mispunches = data?.mispunches || []
+  const longAbsentees = data?.longAbsentees || []
+  const employees = data?.employees || []
+
   const [selectedDate, setSelectedDate] = useState('2026-03-26')
   const [selectedFactory, setSelectedFactory] = useState('f1')
   const [activeModule, setActiveModule] = useState('All')

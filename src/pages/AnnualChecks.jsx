@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { annualChecks, formatINR } from '../data/mock'
+import { formatINR } from '../data/mock'
+import { useData } from '../context/DataContext'
+
 
 const statusColor = { PASS:'pass', FAIL:'fail', WARN:'warn' }
 
@@ -19,6 +21,9 @@ function SectionHeader({ code, name, sub, status }) {
 }
 
 export default function AnnualChecks() {
+  const { data } = useData()
+  const annualChecks = data?.annualChecks || { a24: [], a25: [], a26: [], a27: {} }
+
   const [uploadedECR, setUploadedECR] = useState(false)
   const [uploadedESIC, setUploadedESIC] = useState(false)
   const [uploadedBank, setUploadedBank] = useState(false)

@@ -1,13 +1,19 @@
 import { useState } from 'react'
-import { minimumWages, holidayCalendar, attendanceBonusConfig, incentiveSlabs, configAuditLog, factories, formatINR, fmtDate, fmtDateTime } from '../data/mock'
+import { useEffect } from 'react'
+import { formatINR, fmtDate, fmtDateTime } from '../data/mock'
+import { useData } from '../context/DataContext'
 
 const TABS = ['Minimum Wages', 'Holiday Calendar', 'Attendance Bonus', 'Incentive Slabs', 'Audit Log']
 
 function MinWageTab() {
+  const { data } = useData()
+  const minimumWages = data?.minimumWages || []
   const [editing, setEditing] = useState(null)
   const [rows, setRows] = useState(minimumWages)
   const [showAdd, setShowAdd] = useState(false)
   const [newRow, setNewRow] = useState({ zone:'C', category:'', grade:'I', basic:'', da:'', basicDa:'', effectiveFrom:'2026-04-01' })
+
+  useEffect(() => { setRows(minimumWages) }, [minimumWages])
 
   return (
     <div>
@@ -95,9 +101,14 @@ function MinWageTab() {
 }
 
 function HolidayTab() {
+  const { data } = useData()
+  const holidayCalendar = data?.holidayCalendar || []
+  const factories = data?.factories || []
   const [rows, setRows] = useState(holidayCalendar)
   const [showAdd, setShowAdd] = useState(false)
   const [newRow, setNewRow] = useState({ date:'', name:'', isNational: false, factoryId: null })
+
+  useEffect(() => { setRows(holidayCalendar) }, [holidayCalendar])
 
   return (
     <div>
@@ -179,7 +190,11 @@ function HolidayTab() {
 }
 
 function AttendanceBonusTab() {
+  const { data } = useData()
+  const attendanceBonusConfig = data?.attendanceBonusConfig || []
   const [rows, setRows] = useState(attendanceBonusConfig)
+
+  useEffect(() => { setRows(attendanceBonusConfig) }, [attendanceBonusConfig])
 
   return (
     <div>
@@ -224,7 +239,11 @@ function AttendanceBonusTab() {
 }
 
 function IncentiveSlabTab() {
+  const { data } = useData()
+  const incentiveSlabs = data?.incentiveSlabs || []
   const [rows, setRows] = useState(incentiveSlabs)
+
+  useEffect(() => { setRows(incentiveSlabs) }, [incentiveSlabs])
 
   return (
     <div>
@@ -281,6 +300,9 @@ function IncentiveSlabTab() {
 }
 
 function AuditLogTab() {
+  const { data } = useData()
+  const configAuditLog = data?.configAuditLog || []
+
   return (
     <div>
       <div style={{ marginBottom:16 }}>

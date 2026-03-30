@@ -6,12 +6,13 @@ import MonthlyAudit from './pages/MonthlyAudit'
 import AnnualChecks from './pages/AnnualChecks'
 import AlertsPage from './pages/AlertsPage'
 import Configuration from './pages/Configuration'
+import { DataProvider } from './context/DataContext'
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Layout />}>
+        <Route path="/" element={<DataProvider isMock={false}><Layout /></DataProvider>}>
           <Route index element={<Overview />} />
           <Route path="daily" element={<DailyChecks />} />
           <Route path="monthly" element={<MonthlyAudit />} />
@@ -20,7 +21,7 @@ export default function App() {
           <Route path="config" element={<Configuration />} />
         </Route>
 
-        <Route path="/mock" element={<Layout basePath="/mock" />}>
+        <Route path="/mock" element={<DataProvider isMock={true}><Layout basePath="/mock" /></DataProvider>}>
           <Route index element={<Overview />} />
           <Route path="daily" element={<DailyChecks />} />
           <Route path="monthly" element={<MonthlyAudit />} />

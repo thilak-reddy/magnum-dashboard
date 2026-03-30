@@ -1,8 +1,6 @@
 import { useState, useCallback } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { alerts } from '../data/mock'
-
-const newAlerts = alerts.filter(a => a.status === 'NEW').length
+import { useData } from '../context/DataContext'
 
 const IconHome = () => (
   <svg className="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -83,38 +81,24 @@ function formatIST(date) {
   })
 }
 
-async function fetchAllData() {
-  // API calls to fetch updated data from the database.
-  // Replace these URLs with your actual endpoints.
-  const endpoints = [
-    '/api/daily-checks',
-    '/api/monthly-audit',
-    '/api/annual-checks',
-    '/api/alerts',
-  ]
-  await Promise.all(
-    endpoints.map(url =>
-      fetch(url).then(res => {
-        if (!res.ok) throw new Error(`${url} responded with ${res.status}`)
-        return res.json()
-      })
-    )
-  )
-}
 
 export default function Layout({ basePath = '' }) {
-  const navItems = buildNavItems(basePath, newAlerts)
+  const { data, isLoading, error, refreshData } = useData()
+  
   const configTo = basePath.replace(/\/$/, '') + '/config'
   const location = useLocation()
   const [isRefreshing, setIsRefreshing]   = useState(false)
   const [refreshStatus, setRefreshStatus] = useState('idle')   // 'idle' | 'success' | 'error'
   const [lastRefreshed, setLastRefreshed] = useState(null)
 
+  const newAlerts = data?.alerts?.filter(a => a.status === 'NEW').length || 0
+  const navItems = buildNavItems(basePath, newAlerts)
+
   const triggerRefresh = useCallback(async () => {
     setIsRefreshing(true)
     setRefreshStatus('idle')
     try {
-      await fetchAllData()
+      await refreshData()
       setRefreshStatus('success')
       setLastRefreshed(new Date())
     } catch {
@@ -122,7 +106,21 @@ export default function Layout({ basePath = '' }) {
     } finally {
       setIsRefreshing(false)
     }
-  }, [])
+  }, [refreshData])
+
+  if (isLoading && !data) {
+    return (
+      <div className="app-shell">
+        <div className="loading-overlay">
+          <div className="loading-card">
+            <div className="loading-spinner" />
+            <div className="loading-title">Loading Dashboards</div>
+            <div className="loading-sub">Connecting to database…</div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="app-shell">
@@ -139,14 +137,10 @@ export default function Layout({ basePath = '' }) {
         {/* Factory picker */}
         <div className="factory-select-wrap">
           <select className="factory-select" defaultValue="all">
-            <option value="all">All 7 Factories</option>
-            <option value="f1">TKM V</option>
-            <option value="f2">TKM II</option>
-            <option value="f3">Kandigai</option>
-            <option value="f4">Cheyyar</option>
-            <option value="f5">Kancheepuram</option>
-            <option value="f6">Vellore</option>
-            <option value="f7">Tiruppur</option>
+            <option value="all">All Factories</option>
+            {data?.factories?.map(f => (
+              <option key={f.id} value={f.id}>{f.name}</option>
+            ))}
           </select>
         </div>
 
@@ -220,6 +214,22 @@ export default function Layout({ basePath = '' }) {
 
       {/* Main */}
       <main className="main-content">
+        {error && (
+          <div
+            style={{
+              marginBottom: 16,
+              padding: '12px 14px',
+              borderRadius: 12,
+              border: '1px solid rgba(220, 38, 38, 0.18)',
+              background: 'rgba(254, 242, 242, 0.95)',
+              color: '#991b1b',
+              fontSize: 14,
+              lineHeight: 1.45,
+            }}
+          >
+            Database fetch failed: {error}
+          </div>
+        )}
         <Outlet />
       </main>
 

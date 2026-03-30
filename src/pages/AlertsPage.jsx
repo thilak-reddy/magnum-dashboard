@@ -1,5 +1,8 @@
 import { useState, useMemo } from 'react'
-import { alerts, moduleNames, factories, fmtDateTime } from '../data/mock'
+import { useEffect } from 'react'
+import { moduleNames, fmtDateTime } from '../data/mock'
+import { useData } from '../context/DataContext'
+
 
 const statusColor = { PASS:'pass', FAIL:'fail', WARN:'warn', SKIP:'skip' }
 const sevClass    = { CRITICAL:'crit', HIGH:'high', MEDIUM:'med', LOW:'low' }
@@ -7,6 +10,8 @@ const alertStatus = { NEW:'new', ACKNOWLEDGED:'ack', RESOLVED:'res', DISMISSED:'
 const rowClass    = { CRITICAL:'row-crit', HIGH:'row-high', MEDIUM:'row-warn', LOW:'row-pass' }
 
 function CommentDrawer({ alert, onClose, onAck, onResolve }) {
+  const { data } = useData()
+  const factories = data?.factories || []
   const [comment, setComment] = useState('')
   const [comments, setComments] = useState(alert.comments || [])
 
@@ -130,6 +135,10 @@ function CommentDrawer({ alert, onClose, onAck, onResolve }) {
 }
 
 export default function AlertsPage() {
+  const { data } = useData()
+  const alerts = data?.alerts || []
+  const factories = data?.factories || []
+
   const [filterSev,    setFilterSev]    = useState('All')
   const [filterStatus, setFilterStatus] = useState('All')
   const [filterModule, setFilterModule] = useState('All')
@@ -138,8 +147,12 @@ export default function AlertsPage() {
   const [localAlerts,  setLocalAlerts]  = useState(alerts)
   const [selected2,    setSelected2]    = useState(new Set())
 
-  const modules = ['All', ...new Set(alerts.map(a => a.module))]
-  const factoryList = ['All', ...new Set(alerts.map(a => a.factory))]
+  useEffect(() => {
+    setLocalAlerts(alerts)
+  }, [alerts])
+
+  const modules = ['All', ...new Set(localAlerts.map(a => a.module))]
+  const factoryList = ['All', ...new Set(localAlerts.map(a => a.factory))]
 
   const filtered = useMemo(() => localAlerts.filter(a => {
     if (filterSev    !== 'All' && a.severity !== filterSev)    return false
