@@ -18,7 +18,7 @@ function EmployeeDrawer({ employeeId, factoryId, monthYear, onClose }) {
   const checks = monthlyCheckResults.filter(c => c.employeeId === employeeId && c.monthYear === monthYear)
   if (!emp || !pr) return null
 
-  const workingDays = 22 // Feb 2026 (26 - 4 Sundays)
+  const workingDays = 26 // Mar 2026 (31 - 5 Sundays)
 
   const rows = [
     { label: 'Fixed Basic', val: pr.fixedBasic },
@@ -26,7 +26,6 @@ function EmployeeDrawer({ employeeId, factoryId, monthYear, onClose }) {
     { label: 'Fixed DA',    val: pr.fixedDa    },
     { label: 'Fixed OA',    val: pr.fixedOa    },
     { label: 'Present Days',    val: pr.presentDays + ' days', mono: false },
-    { label: 'Working Days Div', val: workingDays + ' (26 - 4 Sundays)', mono: false },
     { label: 'LOP Days',    val: pr.lopDays + ' days', mono: false },
     { label: 'OT Hours',    val: pr.otHours + ' hrs', mono: false },
     { label: '— Earnings —', val: '', isHeader: true },
@@ -133,7 +132,7 @@ export default function MonthlyAudit() {
   const factoryRecords = selectedFactory === ''
     ? payrollRecords
     : payrollRecords.filter(p => p.factoryId === selectedFactory)
-  const workingDays = 22
+  const workingDays = 26
 
   const enriched = useMemo(() => factoryRecords.map(pr => {
     const emp = employees.find(e => e.id === pr.employeeId)
@@ -203,7 +202,6 @@ export default function MonthlyAudit() {
           <div className="metric-card">
             <div className="metric-label">Working Days</div>
             <div className="metric-value">{workingDays}</div>
-            <div className="metric-sub">26 − 4 Sundays (Feb)</div>
           </div>
           <div className="metric-card">
             <div className="metric-label">Total Net Pay</div>
