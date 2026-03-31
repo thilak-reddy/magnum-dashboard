@@ -129,11 +129,13 @@ export default function MonthlyAudit() {
   const [selectedEmployee, setSelectedEmployee] = useState(null)
   const [sortBy, setSortBy] = useState('employee')
 
-  const factoryRecords = (selectedFactory === ''
-    ? payrollRecords
-    : payrollRecords.filter(p => p.factoryId === selectedFactory)
-  ).filter(p => p.monthYear === '2026-03')
   const workingDays = 26
+
+  const factoryRecords = useMemo(() =>
+    payrollRecords
+      .filter(p => p.monthYear === '2026-03')
+      .filter(p => selectedFactory === '' || p.factoryId === selectedFactory)
+  , [payrollRecords, selectedFactory])
 
   const enriched = useMemo(() => factoryRecords.map(pr => {
     const emp = employees.find(e => e.id === pr.employeeId)
@@ -141,15 +143,22 @@ export default function MonthlyAudit() {
     const issues = empChecks.filter(c => c.status === 'FAIL')
     const warns  = empChecks.filter(c => c.status === 'WARN')
     const calcGross = ((pr.fixedBasic + pr.fixedHra + pr.fixedDa + pr.fixedOa) / workingDays) * pr.presentDays
-    const grossVariance = pr.totalEarnings - (pr.earnedBasic + pr.earnedHra + pr.earnedDa + pr.earnedOa + pr.attendanceBonus + pr.incentiveAmount + pr.workerOtAmount + pr.staffOtAmount)
     return { ...pr, emp, issues, warns, calcGross }
-  }), [factoryRecords])
+  }), [factoryRecords, employees, monthlyCheckResults])
 
   const sorted = useMemo(() => [...enriched].sort((a, b) => {
     if (sortBy === 'variance') return b.issues.length - a.issues.length
     if (sortBy === 'netpay') return b.netPay - a.netPay
     return (a.emp?.name || '').localeCompare(b.emp?.name || '')
   }), [enriched, sortBy])
+
+  const filtered = useMemo(() => {
+    if (!activeModule) return sorted
+    const empIds = new Set(
+      monthlyCheckResults.filter(c => c.moduleCode === activeModule).map(c => c.employeeId)
+    )
+    return sorted.filter(r => empIds.has(r.employeeId))
+  }, [sorted, activeModule, monthlyCheckResults])
 
   // Module strip stats
   const moduleStats = useMemo(() => {
@@ -160,13 +169,11 @@ export default function MonthlyAudit() {
     })
   }, [selectedFactory, monthlyCheckResults])
 
-  const relevantChecks = selectedFactory === '' ? monthlyCheckResults : monthlyCheckResults.filter(c => c.factoryId === selectedFactory)
+  const relevantChecks = useMemo(() =>
+    selectedFactory === '' ? monthlyCheckResults : monthlyCheckResults.filter(c => c.factoryId === selectedFactory)
+  , [selectedFactory, monthlyCheckResults])
   const totalFails = relevantChecks.filter(c => c.status === 'FAIL').length
   const totalPasses = relevantChecks.filter(c => c.status === 'PASS').length
-
-  const filtered = activeModule
-    ? sorted.filter(r => monthlyCheckResults.some(c => c.employeeId === r.employeeId && c.monthYear === r.monthYear && c.moduleCode === activeModule))
-    : sorted
 
   const pagination = usePagination(filtered, [selectedFactory, sortBy, activeModule])
 

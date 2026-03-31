@@ -124,7 +124,7 @@ export function DataProvider({ children, isMock = false }) {
       const payrollRecords = (prData || []).map(pr => ({
         id: pr.id, employeeId: pr.employee_id, factoryId: empFactoryMap[pr.employee_id], monthYear: pr.month_year,
         fixedBasic: pr.fixed_basic, fixedHra: pr.fixed_hra, fixedDa: pr.fixed_da, fixedOa: pr.fixed_oa,
-        presentDays: pr.achieved_days || 0, lopDays: pr.lop_days, layoffDays: pr.layoff_days, otHours: pr.ot_hours,
+        presentDays: 26 - (pr.lop_days || 0) - (pr.layoff_days || 0), lopDays: pr.lop_days, layoffDays: pr.layoff_days, otHours: pr.ot_hours,
         earnedBasic: pr.earned_basic, earnedHra: pr.earned_hra, earnedDa: pr.earned_da, earnedOa: pr.earned_oa,
         attendanceBonus: pr.attendance_bonus, incentiveAmount: pr.incentive_amount, staffOtAmount: pr.staff_ot_amount,
         workerOtAmount: pr.worker_ot_amount, epfDeducted: pr.epf_deducted, esiDeducted: pr.esi_deducted,
