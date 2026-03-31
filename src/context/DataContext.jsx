@@ -113,7 +113,7 @@ export function DataProvider({ children, isMock = false }) {
       const mapResult = r => ({
         id: r.id, runId: r.run_id, moduleCode: r.module_code, employeeId: r.employee_id, factoryId: r.factory_id,
         status: r.status, checkName: r.check_name, expected: r.expected_value, actual: r.actual_value,
-        variance: r.variance, message: r.message, severity: r.severity, period: r.period, monthYear: r.period
+        variance: r.variance, message: r.message, severity: r.severity, period: r.period, monthYear: (r.period || '').slice(0, 7)
       })
 
       const dailyCheckResults = (resultsData || []).filter(r => dailyModules.includes(r.module_code)).map(mapResult)
@@ -122,7 +122,7 @@ export function DataProvider({ children, isMock = false }) {
 
       // Map Payroll Records — derive factoryId from employees since payroll_records has no factory_id column
       const payrollRecords = (prData || []).map(pr => ({
-        id: pr.id, employeeId: pr.employee_id, factoryId: empFactoryMap[pr.employee_id], monthYear: pr.month_year,
+        id: pr.id, employeeId: pr.employee_id, factoryId: empFactoryMap[pr.employee_id], monthYear: (pr.month_year || '').slice(0, 7),
         fixedBasic: pr.fixed_basic, fixedHra: pr.fixed_hra, fixedDa: pr.fixed_da, fixedOa: pr.fixed_oa,
         presentDays: 26 - (pr.lop_days || 0) - (pr.layoff_days || 0), lopDays: pr.lop_days, layoffDays: pr.layoff_days, otHours: pr.ot_hours,
         earnedBasic: pr.earned_basic, earnedHra: pr.earned_hra, earnedDa: pr.earned_da, earnedOa: pr.earned_oa,

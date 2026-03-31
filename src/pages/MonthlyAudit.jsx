@@ -125,7 +125,7 @@ export default function MonthlyAudit() {
   const factories = data?.factories || []
 
   const [selectedFactory, setSelectedFactory] = useState('')
-  const [activeModule, setActiveModule] = useState(null)
+  const [activeModules, setActiveModules] = useState(new Set())
   const [selectedEmployee, setSelectedEmployee] = useState(null)
   const [sortBy, setSortBy] = useState('employee')
 
@@ -143,7 +143,7 @@ export default function MonthlyAudit() {
     const issues = empChecks.filter(c => c.status === 'FAIL')
     const warns  = empChecks.filter(c => c.status === 'WARN')
     const calcGross = ((pr.fixedBasic + pr.fixedHra + pr.fixedDa + pr.fixedOa) / workingDays) * pr.presentDays
-    return { ...pr, emp, issues, warns, calcGross }
+    return { ...pr, emp, empChecks, issues, warns, calcGross }
   }), [factoryRecords, employees, monthlyCheckResults])
 
   const sorted = useMemo(() => [...enriched].sort((a, b) => {
@@ -153,12 +153,13 @@ export default function MonthlyAudit() {
   }), [enriched, sortBy])
 
   const filtered = useMemo(() => {
-    if (!activeModule) return sorted
-    const empIds = new Set(
-      monthlyCheckResults.filter(c => c.moduleCode === activeModule).map(c => c.employeeId)
+    if (activeModules.size === 0) return sorted
+    return sorted.filter(r =>
+      [...activeModules].some(code =>
+        r.empChecks.some(c => c.moduleCode === code && (c.status === 'FAIL' || c.status === 'WARN'))
+      )
     )
-    return sorted.filter(r => empIds.has(r.employeeId))
-  }, [sorted, activeModule, monthlyCheckResults])
+  }, [sorted, activeModules])
 
   // Module strip stats
   const moduleStats = useMemo(() => {
@@ -175,7 +176,7 @@ export default function MonthlyAudit() {
   const totalFails = relevantChecks.filter(c => c.status === 'FAIL').length
   const totalPasses = relevantChecks.filter(c => c.status === 'PASS').length
 
-  const pagination = usePagination(filtered, [selectedFactory, sortBy, activeModule])
+  const pagination = usePagination(filtered, [selectedFactory, sortBy, activeModules])
 
   return (
     <>
@@ -229,8 +230,12 @@ export default function MonthlyAudit() {
             return (
               <div
                 key={code}
-                className={`module-strip-tile${activeModule === code ? ' active' : ''}`}
-                onClick={() => setActiveModule(activeModule === code ? null : code)}
+                className={`module-strip-tile${activeModules.has(code) ? ' active' : ''}`}
+                onClick={() => setActiveModules(prev => {
+                  const next = new Set(prev)
+                  next.has(code) ? next.delete(code) : next.add(code)
+                  return next
+                })}
               >
                 <div className="mst-code">{code}</div>
                 <div className="mst-name">{moduleNames[code]}</div>
