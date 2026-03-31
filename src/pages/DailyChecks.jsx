@@ -6,6 +6,18 @@ import { usePagination, Pagination } from '../components/Pagination'
 
 const modules = ['All', 'D01', 'D02', 'D03', 'D04']
 
+// Finds all ISO UTC datetime substrings within a value and replaces them with IST time (HH:MM, 24h).
+const ISO_RE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?/g
+function fmtIST(val) {
+  if (!val || typeof val !== 'string' || !val.includes('T')) return val
+  return val.replace(ISO_RE, utc => {
+    const d = new Date(utc)
+    if (isNaN(d.getTime())) return utc
+    const ist = new Date(d.getTime() + 5.5 * 60 * 60 * 1000)
+    return `${String(ist.getUTCHours()).padStart(2, '0')}:${String(ist.getUTCMinutes()).padStart(2, '0')}`
+  })
+}
+
 const statusColor = { PASS: 'pass', FAIL: 'fail', WARN: 'warn', SKIP: 'skip' }
 const severityBadge = { CRITICAL: 'crit', HIGH: 'high', MEDIUM: 'med', LOW: 'low' }
 const rowClass = { CRITICAL: 'row-crit', HIGH: 'row-high', MEDIUM: 'row-warn', LOW: 'row-pass', PASS: 'row-pass' }
@@ -66,8 +78,8 @@ function DetailDrawer({ result, onClose }) {
             <div className="drawer-section-title">Check Result</div>
             <div className="drawer-row"><span className="drawer-key">Status</span><span className={`badge badge-${statusColor[result.status]}`}>{result.status}</span></div>
             <div className="drawer-row"><span className="drawer-key">Severity</span><span className={`badge badge-${severityBadge[result.severity]}`}>{result.severity}</span></div>
-            <div className="drawer-row"><span className="drawer-key">Expected</span><span className="drawer-val">{result.expected}</span></div>
-            <div className="drawer-row"><span className="drawer-key">Actual</span><span className="drawer-val" style={{ color: result.status === 'FAIL' ? 'var(--fail)' : result.status === 'WARN' ? 'var(--warn)' : 'var(--pass)' }}>{result.actual}</span></div>
+            <div className="drawer-row"><span className="drawer-key">Expected</span><span className="drawer-val">{fmtIST(result.expected)}</span></div>
+            <div className="drawer-row"><span className="drawer-key">Actual</span><span className="drawer-val" style={{ color: result.status === 'FAIL' ? 'var(--fail)' : result.status === 'WARN' ? 'var(--warn)' : 'var(--pass)' }}>{fmtIST(result.actual)}</span></div>
             {result.variance != null && (
               <div className="drawer-row"><span className="drawer-key">Variance</span><span className="drawer-val">{result.variance}</span></div>
             )}
@@ -245,9 +257,9 @@ export default function DailyChecks() {
                       <td style={{ maxWidth:200 }}>
                         <div className="td-primary" style={{ fontSize:12.5 }}>{r.checkName}</div>
                       </td>
-                      <td className="td-expected">{r.expected}</td>
+                      <td className="td-expected">{fmtIST(r.expected)}</td>
                       <td className={r.status === 'FAIL' ? 'td-actual-fail' : r.status === 'WARN' ? 'td-actual-warn' : 'td-actual-pass'}>
-                        {r.actual}
+                        {fmtIST(r.actual)}
                       </td>
                       <td><span className={`badge badge-${severityBadge[r.severity]}`}>{r.severity}</span></td>
                       <td><span className={`badge badge-${statusColor[r.status]}`}>{r.status}</span></td>
