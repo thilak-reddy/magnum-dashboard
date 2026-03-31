@@ -19,7 +19,6 @@ function fmtIST(val) {
 }
 
 const statusColor = { PASS: 'pass', FAIL: 'fail', WARN: 'warn', SKIP: 'skip' }
-const severityBadge = { CRITICAL: 'crit', HIGH: 'high', MEDIUM: 'med', LOW: 'low' }
 const rowClass = { CRITICAL: 'row-crit', HIGH: 'row-high', MEDIUM: 'row-warn', LOW: 'row-pass', PASS: 'row-pass' }
 
 function ModuleCard({ code, results, active, onClick }) {
@@ -77,7 +76,6 @@ function DetailDrawer({ result, onClose }) {
           <div className="drawer-section">
             <div className="drawer-section-title">Check Result</div>
             <div className="drawer-row"><span className="drawer-key">Status</span><span className={`badge badge-${statusColor[result.status]}`}>{result.status}</span></div>
-            <div className="drawer-row"><span className="drawer-key">Severity</span><span className={`badge badge-${severityBadge[result.severity]}`}>{result.severity}</span></div>
             <div className="drawer-row"><span className="drawer-key">Expected</span><span className="drawer-val">{fmtIST(result.expected)}</span></div>
             <div className="drawer-row"><span className="drawer-key">Actual</span><span className="drawer-val" style={{ color: result.status === 'FAIL' ? 'var(--fail)' : result.status === 'WARN' ? 'var(--warn)' : 'var(--pass)' }}>{fmtIST(result.actual)}</span></div>
             {result.variance != null && (
@@ -230,13 +228,12 @@ export default function DailyChecks() {
                   <th>Check</th>
                   <th>Expected</th>
                   <th>Actual</th>
-                  <th>Severity</th>
                   <th>Status</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
-                  <tr><td colSpan={7} style={{ textAlign:'center', padding:32, color:'var(--text-tertiary)' }}>No results for this filter</td></tr>
+                  <tr><td colSpan={6} style={{ textAlign:'center', padding:32, color:'var(--text-tertiary)' }}>No results for this filter</td></tr>
                 ) : pagination.page.map(r => {
                   const emp = employees.find(e => e.id === r.employeeId)
                   return (
@@ -261,7 +258,6 @@ export default function DailyChecks() {
                       <td className={r.status === 'FAIL' ? 'td-actual-fail' : r.status === 'WARN' ? 'td-actual-warn' : 'td-actual-pass'}>
                         {fmtIST(r.actual)}
                       </td>
-                      <td><span className={`badge badge-${severityBadge[r.severity]}`}>{r.severity}</span></td>
                       <td><span className={`badge badge-${statusColor[r.status]}`}>{r.status}</span></td>
                     </tr>
                   )

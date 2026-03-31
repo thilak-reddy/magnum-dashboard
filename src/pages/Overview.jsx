@@ -131,11 +131,6 @@ export default function Overview() {
             ) : newAlerts.map(a => (
               <div key={a.id} className="alert-row-detail" onClick={() => navigate('/alerts')}>
                 <div className="alert-top">
-                  <div className="alert-sev">
-                    <span className={`badge badge-${a.severity === 'CRITICAL' ? 'crit' : a.severity === 'HIGH' ? 'high' : 'med'}`}>
-                      {a.severity === 'CRITICAL' ? 'CRIT' : a.severity}
-                    </span>
-                  </div>
                   <div style={{ flex: 1 }}>
                     <div className="alert-msg">{a.title}</div>
                     <div className="alert-meta">{a.module} · {a.factory} · {fmtDateTime(a.createdAt)}</div>

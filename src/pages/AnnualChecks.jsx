@@ -11,7 +11,6 @@ const MODULE_META = {
 }
 
 const statusColor   = { PASS: 'pass', FAIL: 'fail', WARN: 'warn', SKIP: 'skip' }
-const severityBadge = { CRITICAL: 'crit', HIGH: 'high', MEDIUM: 'med', LOW: 'low' }
 const rowClass      = { CRITICAL: 'row-crit', HIGH: 'row-high', MEDIUM: 'row-warn', LOW: 'row-pass' }
 
 function SectionHeader({ code, name, sub, results }) {
@@ -45,14 +44,13 @@ function ModuleTable({ results, employees, selectedResult, setSelectedResult }) 
               <th>Expected</th>
               <th>Actual</th>
               <th>Variance</th>
-              <th>Severity</th>
               <th>Status</th>
             </tr>
           </thead>
           <tbody>
             {results.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--text-tertiary)' }}>
+                <td colSpan={6} style={{ textAlign: 'center', padding: 32, color: 'var(--text-tertiary)' }}>
                   No results found
                 </td>
               </tr>
@@ -83,7 +81,6 @@ function ModuleTable({ results, employees, selectedResult, setSelectedResult }) 
                   <td className="td-mono">
                     {r.variance != null ? (r.variance > 0 ? `+${r.variance}` : r.variance) : '—'}
                   </td>
-                  <td><span className={`badge badge-${severityBadge[r.severity]}`}>{r.severity}</span></td>
                   <td><span className={`badge badge-${statusColor[r.status]}`}>{r.status}</span></td>
                 </tr>
               )

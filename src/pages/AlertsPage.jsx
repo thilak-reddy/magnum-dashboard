@@ -5,7 +5,6 @@ import { useData } from '../context/DataContext'
 
 
 const statusColor = { PASS:'pass', FAIL:'fail', WARN:'warn', SKIP:'skip' }
-const sevClass    = { CRITICAL:'crit', HIGH:'high', MEDIUM:'med', LOW:'low' }
 const alertStatus = { NEW:'new', ACKNOWLEDGED:'ack', RESOLVED:'res', DISMISSED:'skip' }
 const rowClass    = { CRITICAL:'row-crit', HIGH:'row-high', MEDIUM:'row-warn', LOW:'row-pass' }
 
@@ -32,7 +31,6 @@ function CommentDrawer({ alert, onClose, onAck, onResolve }) {
         <div className="drawer-header">
           <div style={{ flex: 1, paddingRight: 12 }}>
             <div style={{ display:'flex', gap:8, alignItems:'center', marginBottom:4 }}>
-              <span className={`badge badge-${sevClass[alert.severity]}`}>{alert.severity}</span>
               <span className={`badge badge-${alertStatus[alert.status]}`}>{alert.status}</span>
               <span className="td-code">{alert.module}</span>
             </div>
@@ -139,7 +137,6 @@ export default function AlertsPage() {
   const alerts = data?.alerts || []
   const factories = data?.factories || []
 
-  const [filterSev,    setFilterSev]    = useState('All')
   const [filterStatus, setFilterStatus] = useState('All')
   const [filterModule, setFilterModule] = useState('All')
   const [filterFactory,setFilterFactory]= useState('All')
@@ -155,12 +152,11 @@ export default function AlertsPage() {
   const factoryList = ['All', ...new Set(localAlerts.map(a => a.factory))]
 
   const filtered = useMemo(() => localAlerts.filter(a => {
-    if (filterSev    !== 'All' && a.severity !== filterSev)    return false
     if (filterStatus !== 'All' && a.status   !== filterStatus) return false
     if (filterModule !== 'All' && a.module   !== filterModule) return false
     if (filterFactory!== 'All' && a.factory  !== filterFactory)return false
     return true
-  }), [localAlerts, filterSev, filterStatus, filterModule, filterFactory])
+  }), [localAlerts, filterStatus, filterModule, filterFactory])
 
   const counts = {
     new:  localAlerts.filter(a => a.status === 'NEW').length,
@@ -219,15 +215,6 @@ export default function AlertsPage() {
 
         {/* Filters */}
         <div className="filter-row" style={{ marginBottom: 16 }}>
-          <span className="filter-label">Severity:</span>
-          {['All','CRITICAL','HIGH','MEDIUM','LOW'].map(s => (
-            <button
-              key={s}
-              className={`btn btn-sm btn-ghost${filterSev === s ? ' btn-accent' : ''}`}
-              onClick={() => setFilterSev(s)}
-            >{s === 'All' ? 'All' : s}</button>
-          ))}
-          <div style={{ width:1, height:20, background:'var(--border)', margin:'0 4px' }} />
           <span className="filter-label">Status:</span>
           {['All','NEW','ACKNOWLEDGED','RESOLVED'].map(s => (
             <button
@@ -264,7 +251,6 @@ export default function AlertsPage() {
               >
                 <div className="alert-top">
                   <div className="alert-sev" style={{ display:'flex', flexDirection:'column', gap:4, width:70 }}>
-                    <span className={`badge badge-${sevClass[a.severity]}`}>{a.severity === 'CRITICAL' ? 'CRIT' : a.severity}</span>
                     <span className={`badge badge-${alertStatus[a.status]}`} style={{ fontSize:10 }}>{a.status === 'ACKNOWLEDGED' ? 'ACK\'D' : a.status}</span>
                   </div>
                   <div style={{ flex:1 }}>
