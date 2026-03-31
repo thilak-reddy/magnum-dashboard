@@ -51,6 +51,23 @@ export default function Overview() {
   const alerts = data?.alerts || []
   const checkRuns = data?.checkRuns || []
   const trendData = data?.trendData || []
+  const payrollRecords = data?.payrollRecords || []
+  const monthlyCheckResults = data?.monthlyCheckResults || []
+  const dailyCheckResults = data?.dailyCheckResults || []
+  const annualCheckResults = data?.annualCheckResults || []
+
+  // Derive current month from most recent payroll record
+  const currentMonth = payrollRecords.reduce((latest, p) => p.monthYear > latest ? p.monthYear : latest, '')
+
+  const allResults = [...dailyCheckResults, ...monthlyCheckResults, ...annualCheckResults]
+  const thisMonthResults = allResults.filter(c => c.monthYear === currentMonth)
+  const totalChecks = thisMonthResults.length
+  const totalPassed = thisMonthResults.filter(c => c.status === 'PASS').length
+  const totalFailed = thisMonthResults.filter(c => c.status === 'FAIL').length
+  const totalWarns = thisMonthResults.filter(c => c.status === 'WARN').length
+  const passRate = totalChecks > 0 ? (totalPassed / totalChecks * 100).toFixed(1) : '0.0'
+  const failRate = totalChecks > 0 ? (totalFailed / totalChecks * 100).toFixed(1) : '0.0'
+  const employeesAudited = new Set(payrollRecords.filter(p => p.monthYear === currentMonth).map(p => p.employeeId)).size
 
   const [ackd, setAckd] = useState(new Set())
   const newAlerts = alerts.filter(a => a.status === 'NEW' && !ackd.has(a.id)).slice(0, 6)
@@ -197,22 +214,22 @@ export default function Overview() {
         <div className="metric-row">
           <div className="metric-card">
             <div className="metric-label">Total Checks Run</div>
-            <div className="metric-value">2,184</div>
-            <div className="metric-sub">7 factories · Feb 2026</div>
+            <div className="metric-value">{totalChecks.toLocaleString()}</div>
+            <div className="metric-sub">{factories.length} factories · {currentMonth}</div>
           </div>
           <div className="metric-card metric-pass">
             <div className="metric-label">Passed</div>
-            <div className="metric-value">1,898</div>
-            <div className="metric-sub">86.9% pass rate</div>
+            <div className="metric-value">{totalPassed.toLocaleString()}</div>
+            <div className="metric-sub">{passRate}% pass rate</div>
           </div>
           <div className="metric-card metric-fail">
             <div className="metric-label">Failed</div>
-            <div className="metric-value">193</div>
-            <div className="metric-sub">8.8% of all checks</div>
+            <div className="metric-value">{totalFailed.toLocaleString()}</div>
+            <div className="metric-sub">{failRate}% of all checks</div>
           </div>
           <div className="metric-card metric-warn">
             <div className="metric-label">Warnings</div>
-            <div className="metric-value">93</div>
+            <div className="metric-value">{totalWarns.toLocaleString()}</div>
             <div className="metric-sub">Needs HR review</div>
           </div>
           <div className="metric-card metric-fail">
@@ -222,7 +239,7 @@ export default function Overview() {
           </div>
           <div className="metric-card">
             <div className="metric-label">Employees Audited</div>
-            <div className="metric-value">348</div>
+            <div className="metric-value">{employeesAudited.toLocaleString()}</div>
             <div className="metric-sub">All active employees</div>
           </div>
         </div>
