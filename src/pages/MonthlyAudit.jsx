@@ -18,7 +18,7 @@ function EmployeeDrawer({ employeeId, factoryId, monthYear, onClose }) {
   const checks = monthlyCheckResults.filter(c => c.employeeId === employeeId && c.monthYear === monthYear)
   if (!emp || !pr) return null
 
-  const workingDays = 26 // Mar 2026 (31 - 5 Sundays)
+  const workingDays = 26 
 
   const rows = [
     { label: 'Fixed Basic', val: pr.fixedBasic },
