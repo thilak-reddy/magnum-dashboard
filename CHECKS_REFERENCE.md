@@ -1,3 +1,4 @@
+<!-- markdownlint-disable -->
 # Check Results Reference — Severity & Status
 
 ## Status
