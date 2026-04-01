@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useData } from '../context/DataContext'
+import { useAuth } from '../context/AuthContext'
 
 const IconHome = () => (
   <svg className="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -84,6 +85,8 @@ function formatIST(date) {
 
 export default function Layout({ basePath = '' }) {
   const { data, isLoading, error, refreshData } = useData()
+  const { user, signOut } = useAuth()
+  const navigate = useNavigate()
   
   const configTo = basePath.replace(/\/$/, '') + '/config'
   const location = useLocation()
@@ -203,11 +206,21 @@ export default function Layout({ basePath = '' }) {
           </div>
 
           <div className="sidebar-user">
-            <div className="user-avatar">D</div>
+            <div className="user-avatar">{user?.email?.[0]?.toUpperCase() ?? '?'}</div>
             <div className="user-info">
-              <div className="user-name">Divya Menon</div>
-              <div className="user-role">Central HR</div>
+              <div className="user-name user-email-truncate">{user?.email ?? ''}</div>
             </div>
+            <button
+              className="logout-btn"
+              title="Sign out"
+              onClick={async () => { await signOut(); navigate('/login', { replace: true }) }}
+            >
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}>
+                <path d="M7 3H4a1 1 0 00-1 1v12a1 1 0 001 1h3"/>
+                <path d="M13 14l3-4-3-4"/>
+                <path d="M16 10H7"/>
+              </svg>
+            </button>
           </div>
         </div>
       </aside>
